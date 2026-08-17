@@ -11,11 +11,17 @@ const navigation = [
     icon: 'i-lucide-layout-dashboard',
     to: '/dashboard'
   },
+    {
+    label: 'Users',
+    icon: 'i-lucide-users',
+    to: '/dashboard/users'
+  },
   {
     label: 'Modules',
     icon: 'i-lucide-box',
     to: '/dashboard/modules'
-  }
+  },
+
 ]
 
 const isActive = (to: string) => {
