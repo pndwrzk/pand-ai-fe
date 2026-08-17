@@ -23,19 +23,17 @@ const fileId = String(route.params.fileId ?? '')
 
 const { handleError } = useErrorHandler()
 
-// Load file detail
 const { file, isLoading, loadFile } = useFileDetailLoader()
 
-// isSyncingEditor ref for sharing between composables
+
 const isSyncingEditor = ref(false)
 
-// Active content computed
 const activeContent = computed<FileContent | null>(() => {
   if (!file.value?.contents?.length) return null
   return file.value.contents.find((content: FileContent) => content.page_number === currentPage.value) ?? null
 })
 
-// PDF viewer state
+
 const {
   currentPage,
   pdfError,

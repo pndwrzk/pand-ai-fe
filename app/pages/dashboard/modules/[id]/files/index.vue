@@ -34,7 +34,7 @@ const { handleError } = useErrorHandler()
 // --- Polling for PENDING files ---
 const pollInterval = ref<ReturnType<typeof setInterval> | null>(null)
 
-const hasPendingFiles = () => files.value.some(f => f.status === FileStatus.PENDING)
+const hasPendingFiles = () => files.value.some(f => f.status === FileStatus.PENDING ||  f.status === FileStatus.PROCESS)
 
 const startPolling = () => {
   if (pollInterval.value) return
@@ -363,7 +363,7 @@ onUnmounted(stopPolling)
               </td>
               <td class="px-4 py-3">
                 <div
-                  v-if="file.status === FileStatus.PENDING"
+                  v-if="file.status === FileStatus.PROCESS"
                   class="flex items-center gap-2 text-muted"
                 >
                   <UIcon
