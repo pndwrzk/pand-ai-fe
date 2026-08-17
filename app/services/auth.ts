@@ -1,4 +1,4 @@
-import type { AuthLoginPayload, AuthLoginResponse, AuthNamespaceKey } from "~/types/auth";
+import type { AuthInternalMeData, AuthInternalMeResponse, AuthLoginPayload, AuthLoginResponse, AuthMeData, AuthMeResponse, AuthNamespaceKey } from "~/types/auth";
 
 const authCookieMap = {
   app: {
@@ -31,6 +31,22 @@ export const internalLogin = async (
     method: "POST",
     body: payload,
   });
+};
+
+export const fetchMe = async (): Promise<AuthMeData> => {
+  const api = useApi();
+
+  const response = await api<AuthMeResponse>("/auth/me");
+
+  return response.data;
+};
+
+export const fetchInternalMe = async (): Promise<AuthInternalMeData> => {
+  const api = useApi();
+
+  const response = await api<AuthInternalMeResponse>("/auth/internal/me");
+
+  return response.data;
 };
 
 export const setAuthToken = (

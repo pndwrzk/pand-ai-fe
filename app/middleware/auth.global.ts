@@ -1,4 +1,4 @@
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(async (to) => {
   const appToken = useCookie('app_access_token').value
   const internalToken = useCookie('internal_access_token').value
 
@@ -29,6 +29,21 @@ export default defineNuxtRouteMiddleware((to) => {
   if (to.path.startsWith('/dashboard')) {
     if (!internalToken) {
       return navigateTo('/dashboard/login')
+    }
+
+    const { user, isSuperAdmin, fetchUser, clearUser } = useAuthUser()
+
+    if (!user.value) {
+      try {
+        await fetchUser()
+      } catch {
+        clearUser()
+        return navigateTo('/dashboard/login')
+      }
+    }
+
+    if (to.path.startsWith('/dashboard/users') && !isSuperAdmin.value) {
+      return navigateTo('/dashboard')
     }
   }
 })

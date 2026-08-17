@@ -4,25 +4,34 @@
 import { clearAuthToken } from '~/services/auth'
 
 const { isOpen, close } = useSidebar()
+const { user, isSuperAdmin, fetchUser, clearUser } = useAuthUser()
 
-const navigation = [
+onMounted(async () => {
+  await fetchUser()
+})
+
+const baseNavigation = [
   {
     label: 'Dashboard',
     icon: 'i-lucide-layout-dashboard',
     to: '/dashboard'
   },
-    {
+  {
     label: 'Users',
     icon: 'i-lucide-users',
-    to: '/dashboard/users'
+    to: '/dashboard/users',
+    superAdminOnly: true
   },
   {
     label: 'Modules',
     icon: 'i-lucide-box',
     to: '/dashboard/modules'
-  },
-
+  }
 ]
+
+const navigation = computed(() =>
+  baseNavigation.filter(item => !item.superAdminOnly || isSuperAdmin.value)
+)
 
 const isActive = (to: string) => {
   const route = useRoute()
@@ -36,6 +45,7 @@ const isActive = (to: string) => {
 
 const handleLogout = async () => {
   clearAuthToken('internal')
+  clearUser()
   await navigateTo('/dashboard/login')
 }
 </script>
@@ -82,15 +92,15 @@ const handleLogout = async () => {
       <!-- Bottom User -->
       <div class="absolute inset-x-0 bottom-0 border-t border-default bg-default p-4">
         <div class="flex items-center gap-3">
-          <UAvatar src="https://i.pravatar.cc/100" alt="User" />
+          <UAvatar src="https://i.pravatar.cc/100" :alt="user?.name ?? 'User'" />
 
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-medium text-highlighted">
-              Rizki Pandiwa
+              {{ user?.name ?? '...' }}
             </p>
 
             <p class="truncate text-xs text-muted">
-              Software Developer
+              {{ user?.email ?? '' }}
             </p>
           </div>
 
