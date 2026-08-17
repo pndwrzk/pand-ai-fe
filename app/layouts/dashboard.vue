@@ -7,6 +7,10 @@ const { isOpen, close } = useSidebar()
 const { user, isSuperAdmin, fetchUser, clearUser } = useAuthUser()
 
 onMounted(async () => {
+  if (!useCookie('internal_access_token').value) {
+    return
+  }
+
   await fetchUser()
 })
 

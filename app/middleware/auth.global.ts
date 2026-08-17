@@ -1,3 +1,5 @@
+import { clearAuthToken } from '~/services/auth'
+
 export default defineNuxtRouteMiddleware(async (to) => {
   const appToken = useCookie('app_access_token').value
   const internalToken = useCookie('internal_access_token').value
@@ -31,12 +33,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
       return navigateTo('/dashboard/login')
     }
 
-    const { user, isSuperAdmin, fetchUser, clearUser } = useAuthUser()
+    const { user, isSuperAdmin, fetchUser, clearUser, isLoading } = useAuthUser()
 
-    if (!user.value) {
+    if (!user.value && !isLoading.value) {
       try {
         await fetchUser()
       } catch {
+        clearAuthToken('internal')
+        clearAuthToken('app')
         clearUser()
         return navigateTo('/dashboard/login')
       }

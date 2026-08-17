@@ -8,10 +8,11 @@ export enum FileStatus {
 export interface FileContent {
   id: string
   page_number: number
-  content: string
-  status: number
-  created_at: string
-  updated_at: string
+  content?: string
+  content_original?: string
+  status?: number
+  created_at?: string
+  updated_at?: string
 }
 
 export interface ModuleFile {
@@ -23,9 +24,17 @@ export interface ModuleFile {
   type: string
   size: number
   status: FileStatus
+  total_contents?: number
+  is_available_vector?: boolean
   created_at: string
   updated_at: string
   contents?: FileContent[]
+}
+
+export interface FileContentResponse {
+  success: boolean
+  message: string
+  data: FileContent
 }
 
 export interface ModuleFilesResponse {

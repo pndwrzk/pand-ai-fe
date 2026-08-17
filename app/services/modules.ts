@@ -6,6 +6,8 @@ import type {
   ModulesResponse
 } from '~/types/modules'
 import type {
+  FileContent,
+  FileContentResponse,
   FileMutationResponse,
   FileResponse,
   ModuleFile,
@@ -27,6 +29,12 @@ export const fetchModuleFiles = async (moduleId: string): Promise<ModuleFilesRes
 export const fetchFileDetail = async (fileId: string): Promise<ModuleFile> => {
   const api = useApi()
   const response = await api<FileResponse>(`/internal/files/${fileId}`)
+  return response.data
+}
+
+export const fetchFileContent = async (contentId: string): Promise<FileContent> => {
+  const api = useApi()
+  const response = await api<FileContentResponse>(`/internal/files/content/${contentId}`)
   return response.data
 }
 

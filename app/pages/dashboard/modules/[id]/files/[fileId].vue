@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import 'ckeditor5/ckeditor5.css'
-import { computed, watch, onMounted, ref } from 'vue'
+import { computed, watch, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { FileContent } from '~/types/files'
+import { FileStatus } from '~/types/files'
 import { useErrorHandler } from '~/composables/useErrorHandler'
 import { STATUS_LABELS, getStatusLabel } from '~/constants/fileStatus'
 import { usePdfViewer } from '~/composables/usePdfViewer'
@@ -23,8 +24,28 @@ const fileId = String(route.params.fileId ?? '')
 
 const { handleError } = useErrorHandler()
 
-const { file, isLoading, loadFile } = useFileDetailLoader()
+const { file, isLoading, loadFile, loadPageContent } = useFileDetailLoader()
+const pollInterval = ref<ReturnType<typeof setInterval> | null>(null)
 
+const isContentProcessing = computed(() =>
+  Number(activeContent.value?.status ?? 0) === 1
+)
+
+const startPolling = () => {
+  if (pollInterval.value || !moduleId || !fileId) return
+
+  pollInterval.value = setInterval(async () => {
+    await loadPageContent(currentPage.value)
+    await syncEditorFromActiveContent()
+  }, 2000)
+}
+
+const stopPolling = () => {
+  if (pollInterval.value) {
+    clearInterval(pollInterval.value)
+    pollInterval.value = null
+  }
+}
 
 const isSyncingEditor = ref(false)
 
@@ -75,17 +96,19 @@ const updateContent = async () => {
     isDirty.value,
     editorData.value
   )
-  
+
   if (success) {
     isDirty.value = false
+    await loadPageContent(currentPage.value)
   }
 }
 
 const approveContent = async () => {
   const success = await approveContentAction(activeContent.value)
-  
+
   if (success) {
     isDirty.value = false
+    await loadPageContent(currentPage.value)
   }
 }
 
@@ -98,9 +121,24 @@ watch(currentPage, async () => {
   pdfError.value = false
   isPdfLoading.value = true
 
+  await loadPageContent(currentPage.value)
+
   if (!isEditorReady.value) return
   await syncEditorFromActiveContent()
 })
+
+watch(
+  isContentProcessing,
+  (isProcessing) => {
+    if (isProcessing) {
+      startPolling()
+      return
+    }
+
+    stopPolling()
+  },
+  { immediate: true }
+)
 
 const handleBack = () => {
   router.push(`/dashboard/modules/${moduleId}/files`)
@@ -113,13 +151,15 @@ onMounted(async () => {
     isEditorReady.value,
     syncEditorFromActiveContent
   )
-  
+
   if (firstPageNumber) {
     currentPage.value = firstPageNumber
   }
-  
+
   await loadEditor()
 })
+
+onUnmounted(stopPolling)
 </script>
 
 <template>
@@ -222,7 +262,19 @@ onMounted(async () => {
             <p class="font-medium text-highlighted">
               Status
             </p>
-            <p>{{ file ? getStatusLabel(file.status) : '-' }}</p>
+            <div
+              v-if="file && (file.status === FileStatus.PENDING || file.status === FileStatus.PROCESS)"
+              class="flex items-center gap-2 text-muted"
+            >
+              <UIcon
+                name="i-lucide-loader-2"
+                class="size-4 animate-spin"
+              />
+              <span>{{ file.status === FileStatus.PROCESS ? 'Processing' : 'Pending' }}</span>
+            </div>
+            <p v-else>
+              {{ file ? getStatusLabel(file.status) : '-' }}
+            </p>
           </div>
         </div>
 
@@ -339,46 +391,54 @@ onMounted(async () => {
 
         <div class="flex items-center justify-end gap-2 border-t border-default bg-default px-4 py-3">
           <template v-if="isEditorReady && activeContent">
-            <template v-if="isEditable">
-              <!-- <UButton color="neutral" variant="ghost" size="sm" class="rounded-xs"
-                                :disabled="!isDirty || isSaving || isApproving" @click="cancelEdit">
-                                Cancel
-                            </UButton> -->
+            <div
+              v-if="Number(activeContent.status ?? 0) === 1"
+              class="flex items-center gap-2 text-muted"
+            >
+              <UIcon
+                name="i-lucide-loader-2"
+                class="size-4 animate-spin"
+              />
+              <span>Processing</span>
+            </div>
 
-              <UButton
-                color="info"
-                variant="outline"
-                size="sm"
-                class="rounded-xs"
-                :disabled="isSaving || isApproving"
-                @click="resetContent"
-              >
-                Reset
-              </UButton>
+            <template v-else>
+              <template v-if="isEditable">
+                <UButton
+                  color="info"
+                  variant="outline"
+                  size="sm"
+                  class="rounded-xs"
+                  :disabled="isSaving || isApproving"
+                  @click="resetContent"
+                >
+                  Reset
+                </UButton>
+
+                <UButton
+                  color="primary"
+                  variant="outline"
+                  size="sm"
+                  class="rounded-xs"
+                  :disabled="!isDirty || isSaving || isApproving"
+                  :loading="isSaving"
+                  @click="updateContent"
+                >
+                  Update
+                </UButton>
+              </template>
 
               <UButton
                 color="primary"
-                variant="outline"
                 size="sm"
                 class="rounded-xs"
-                :disabled="!isDirty || isSaving || isApproving"
-                :loading="isSaving"
-                @click="updateContent"
+                :disabled="isSaving || isApproving"
+                :loading="isApproving"
+                @click="approveContent"
               >
-                Update
+                {{ isEditable ? 'Approve' : 'Unapprove' }}
               </UButton>
             </template>
-
-            <UButton
-              color="primary"
-              size="sm"
-              class="rounded-xs"
-              :disabled="isSaving || isApproving"
-              :loading="isApproving"
-              @click="approveContent"
-            >
-              {{ isEditable ? 'Approve' : 'Unapprove' }}
-            </UButton>
           </template>
         </div>
       </div>

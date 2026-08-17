@@ -14,7 +14,9 @@ export const useFileContent = () => {
 
   const CONTENT_STATUS = {
     EDITABLE: 0,
-    APPROVED: 1
+    PROCESSING: 1,
+    APPROVED: 2,
+    FAILED: -1
   } as const
 
   const updateContent = async (

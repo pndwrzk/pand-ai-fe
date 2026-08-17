@@ -1,6 +1,6 @@
 import { ref, nextTick } from 'vue'
-import type { ModuleFile } from '~/types/files'
-import { fetchFileDetail } from '~/services/modules'
+import type { FileContent, ModuleFile } from '~/types/files'
+import { fetchFileContent, fetchFileDetail } from '~/services/modules'
 import { useErrorHandler } from '~/composables/useErrorHandler'
 
 export const useFileDetailLoader = () => {
@@ -8,6 +8,30 @@ export const useFileDetailLoader = () => {
   const isLoading = ref(true)
 
   const { handleError } = useErrorHandler()
+
+  const loadPageContent = async (pageNumber: number) => {
+    if (!file.value?.contents?.length) return
+
+    const matchedContent = file.value.contents.find((content) => content.page_number === pageNumber)
+
+    if (!matchedContent) return
+
+    try {
+      const contentData = await fetchFileContent(matchedContent.id)
+
+      const targetIndex = file.value.contents.findIndex((content) => content.id === matchedContent.id)
+
+      if (targetIndex >= 0) {
+        file.value.contents[targetIndex] = {
+          ...file.value.contents[targetIndex],
+          ...contentData
+        }
+      }
+    } catch (error) {
+      console.error('loadPageContent error:', error)
+      handleError(error)
+    }
+  }
 
   const loadFile = async (
     fileId: string,
@@ -32,8 +56,13 @@ export const useFileDetailLoader = () => {
 
       file.value = response
 
-      // Reset to first page
       const firstPageNumber = response.contents?.[0]?.page_number ?? 1
+
+      if (response.total_contents && response.total_contents > 0 && response.contents?.length) {
+        file.value.contents = response.contents.map((content) => ({ ...content }))
+      }
+
+      await loadPageContent(firstPageNumber)
 
       if (isEditorReady) {
         await nextTick()
@@ -52,6 +81,7 @@ export const useFileDetailLoader = () => {
   return {
     file,
     isLoading,
-    loadFile
+    loadFile,
+    loadPageContent
   }
 }
