@@ -124,14 +124,25 @@ onMounted(async () => {
 
 <template>
   <div class="p-4">
-    <div class="mb-4 flex items-center justify-between gap-4">
-      <div>
-        <h1 class="text-xl font-semibold">
-          File Detail
-        </h1>
-        <p class="text-sm text-muted">
-          Module ID: {{ moduleId }} — File ID: {{ fileId }}
-        </p>
+    <div class="mb-4 flex items-end justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <UButton
+          icon="i-lucide-arrow-left"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          class="rounded-xs"
+          aria-label="Back to files"
+          @click="handleBack"
+        />
+        <div>
+          <h1 class="text-xl font-semibold">
+            File Detail
+          </h1>
+          <p class="text-sm text-muted">
+            Module ID: {{ moduleId }} — File ID: {{ fileId }}
+          </p>
+        </div>
       </div>
     </div>
 
@@ -215,30 +226,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="mt-6 flex flex-wrap gap-3">
-          <UButton
-            color="primary"
-            variant="outline"
-            size="sm"
-            class="rounded-xs"
-            :href="file?.url"
-            target="_blank"
-            rel="noreferrer"
-            :disabled="!file?.url"
-          >
-            Open File
-          </UButton>
-
-          <UButton
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            class="rounded-xs"
-            @click="handleBack"
-          >
-            Back to Files
-          </UButton>
-        </div>
+     
       </div>
 
       <div class="overflow-hidden rounded-xs border border-default bg-default">
